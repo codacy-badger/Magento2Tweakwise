@@ -219,7 +219,7 @@ class DefaultRenderer extends Template
      */
     public function getItemPrefix()
     {
-        return $this->getFacetSettings()->getPrefix();
+        return $this->escapeHtml($this->getFacetSettings()->getPrefix());
     }
 
     /**
@@ -227,7 +227,7 @@ class DefaultRenderer extends Template
      */
     public function getItemPostfix()
     {
-        return $this->getFacetSettings()->getPostfix();
+        return $this->escapeHtml($this->getFacetSettings()->getPostfix());
     }
 
     /**
