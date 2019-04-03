@@ -331,7 +331,7 @@ class Config
             return $store->getConfig($path);
         }
 
-        return $this->config->getValue($path);
+        return $this->config->getValue($path, 'store');
     }
 
     /**
