@@ -239,13 +239,7 @@ class QueryParameterStrategy implements UrlInterface, FilterApplierInterface, Ca
      */
     protected function getCategoryFilters(HttpRequest $request)
     {
-        $categories = $request->getQuery('categorie');
-        $categories = explode(ProductSearchRequest::CATEGORY_TREE_SEPARATOR, $categories);
-        $categories = array_map('intval', $categories);
-        $categories = array_filter($categories);
-        $categories = array_unique($categories);
-
-        return $categories;
+        return $request->getQuery('categorie');
     }
 
     /**
@@ -281,7 +275,7 @@ class QueryParameterStrategy implements UrlInterface, FilterApplierInterface, Ca
     {
         $categories = $this->getCategoryFilters($request);
         if ($categories) {
-            $navigationRequest->addCategoryFilter(implode(ProductSearchRequest::CATEGORY_TREE_SEPARATOR, $categories));
+            $navigationRequest->addCategoryFilter($categories);
         }
 
         $attributeFilters = $this->getAttributeFilters($request);
