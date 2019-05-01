@@ -111,19 +111,11 @@ class Url
      */
     protected function getCategorySelectUrl(Item $item, CategoryInterface $category): string
     {
-        $filter = $item->getFilter();
-        $facet = $filter->getFacet();
-        $settings = $facet->getFacetSettings();
-
-        if ($settings->getSelectionType() === SettingsType::SELECTION_TYPE_TREE) {
-            return $this->categoryUrlStrategy->getCategoryTreeSelectUrl($this->request, $item, $category);
-        }
-
         if ($this->config->getCategoryAsLink()) {
             return $category->getUrl();
         }
 
-        return $this->categoryUrlStrategy->getCategoryFilterSelectUrl($this->request, $item, $category);
+        return $this->categoryUrlStrategy->getCategorySelectUrl($this->request, $item, $category);
     }
 
     /**
@@ -150,19 +142,11 @@ class Url
      */
     protected function getCategoryRemoveUrl(Item $item, CategoryInterface $category): string
     {
-        $filter = $item->getFilter();
-        $facet = $filter->getFacet();
-        $settings = $facet->getFacetSettings();
-
-        if ($settings->getSelectionType() === SettingsType::SELECTION_TYPE_TREE) {
-            return $this->categoryUrlStrategy->getCategoryTreeRemoveUrl($this->request, $item, $category);
-        }
-
         if ($this->config->getCategoryAsLink()) {
             return $category->getParentCategory()->getUrl();
         }
 
-        return $this->categoryUrlStrategy->getCategoryFilterRemoveUrl($this->request, $item, $category);
+        return $this->categoryUrlStrategy->getCategoryRemoveUrl($this->request, $item, $category);
     }
 
     /**

@@ -15,16 +15,12 @@ use Emico\Tweakwise\Model\Catalog\Layer\Url\UrlInterface;
 use Emico\Tweakwise\Model\Client\Request\ProductNavigationRequest;
 use Emico\Tweakwise\Model\Catalog\Layer\Url\UrlModel;
 use Emico\Tweakwise\Model\Client\Request\ProductSearchRequest;
+use Emico\Tweakwise\Model\Client\Type\FacetType\SettingsType;
 use Magento\Catalog\Api\Data\CategoryInterface;
 use Zend\Http\Request as HttpRequest;
 
 class QueryParameterStrategy implements UrlInterface, FilterApplierInterface, CategoryUrlInterface
 {
-    /**
-     * Separator used in category tree urls
-     */
-    const CATEGORY_TREE_SEPARATOR = '-';
-
     /**
      * Extra ignored page parameters
      */
@@ -132,54 +128,35 @@ class QueryParameterStrategy implements UrlInterface, FilterApplierInterface, Ca
     /**
      * {@inheritdoc}
      */
-    public function getCategoryTreeSelectUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
+    public function getCategorySelectUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
     {
         $filter = $item->getFilter();
-        $facet = $filter->getFacet();
-        $settings = $facet->getFacetSettings();
-        $urlKey = $settings->getUrlKey();
+        $urlKey = $filter->getUrlKey();
 
-        $requestData = $request->getQuery($urlKey);
-        if (!$requestData) {
-            $requestData = [];
-        } else {
-            $requestData = explode(self::CATEGORY_TREE_SEPARATOR, $requestData);
-        }
+        preg_match('/\?tn_cid=(.*)/', $item->getAttribute()->getUrl(), $matches);
+        $categoryPath = $matches[1];
 
-        $categoryId = $category->getId();
-        if (!in_array($categoryId, $requestData)) {
-            $requestData[] = $categoryId;
-        }
-
-        $query = [$urlKey => join(self::CATEGORY_TREE_SEPARATOR, $requestData)];
+        $query = [$urlKey => $categoryPath];
         return $this->getCurrentQueryUrl($query);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getCategoryTreeRemoveUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
+    public function getCategoryRemoveUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
     {
         $filter = $item->getFilter();
-        $facet = $filter->getFacet();
-        $settings = $facet->getFacetSettings();
-        $urlKey = $settings->getUrlKey();
+        $urlKey = $filter->getUrlKey();
 
-        $requestData = $request->getQuery($urlKey);
-        if (!$requestData) {
-            $requestData = [];
-        } else {
-            $requestData = explode(self::CATEGORY_TREE_SEPARATOR, $requestData);
-        }
+        $categories = $this->getCategoriesFromRequest($request, $urlKey);
 
-        $categoryId = $category->getId();
-        $index = array_search($categoryId, $requestData);
+        $index = array_search($item->getAttribute()->getAttributeId(), $categories);
         if ($index !== false) {
-            array_splice($requestData, $index);
+            array_splice($categories, $index);
         }
 
-        if (count($requestData)) {
-            $value = join(self::CATEGORY_TREE_SEPARATOR, $requestData);
+        if (count($categories)) {
+            $value = implode(ProductSearchRequest::CATEGORY_TREE_SEPARATOR, $categories);
         } else {
             $value = $filter->getResetValue();
         }
@@ -189,35 +166,16 @@ class QueryParameterStrategy implements UrlInterface, FilterApplierInterface, Ca
     }
 
     /**
-     * {@inheritdoc}
+     * @param string $categoryUrlKey
+     * @return array
      */
-    public function getCategoryFilterSelectUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
+    protected function getCategoriesFromRequest(HttpRequest $request, string $categoryUrlKey): array
     {
-        $attribute = $item->getAttribute();
-        $filter = $item->getFilter();
-        $facet = $filter->getFacet();
-        $settings = $facet->getFacetSettings();
-
-        $urlKey = $settings->getUrlKey();
-        $value = $attribute->getTitle();
-
-        $query = [$urlKey => $value];
-        return $this->getCurrentQueryUrl($query);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCategoryFilterRemoveUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
-    {
-        $filter = $item->getFilter();
-        $facet = $filter->getFacet();
-        $settings = $facet->getFacetSettings();
-
-        $urlKey = $settings->getUrlKey();
-
-        $query = [$urlKey => $filter->getCleanValue()];
-        return $this->getCurrentQueryUrl($query);
+        $requestData = $request->getQuery($categoryUrlKey);
+        if (!$requestData) {
+            return [];
+        }
+        return explode(ProductSearchRequest::CATEGORY_TREE_SEPARATOR, $requestData);
     }
 
     /**
@@ -282,7 +240,7 @@ class QueryParameterStrategy implements UrlInterface, FilterApplierInterface, Ca
     protected function getCategoryFilters(HttpRequest $request)
     {
         $categories = $request->getQuery('categorie');
-        $categories = explode(self::CATEGORY_TREE_SEPARATOR, $categories);
+        $categories = explode(ProductSearchRequest::CATEGORY_TREE_SEPARATOR, $categories);
         $categories = array_map('intval', $categories);
         $categories = array_filter($categories);
         $categories = array_unique($categories);
@@ -322,8 +280,8 @@ class QueryParameterStrategy implements UrlInterface, FilterApplierInterface, Ca
     public function apply(HttpRequest $request, ProductNavigationRequest $navigationRequest): FilterApplierInterface
     {
         $categories = $this->getCategoryFilters($request);
-        foreach ($categories as $categoryId) {
-            $navigationRequest->addCategoryFilter($categoryId);
+        if ($categories) {
+            $navigationRequest->addCategoryFilter(implode(ProductSearchRequest::CATEGORY_TREE_SEPARATOR, $categories));
         }
 
         $attributeFilters = $this->getAttributeFilters($request);

@@ -10,15 +10,17 @@ namespace Emico\Tweakwise\Model\Catalog\Layer\Url\Strategy;
 
 
 use Emico\Tweakwise\Model\Catalog\Layer\Filter\Item;
+use Emico\Tweakwise\Model\Catalog\Layer\Url\CategoryUrlInterface;
 use Emico\Tweakwise\Model\Catalog\Layer\Url\FilterApplierInterface;
 use Emico\Tweakwise\Model\Catalog\Layer\Url\RouteMatchingInterface;
 use Emico\Tweakwise\Model\Catalog\Layer\Url\UrlInterface;
 use Emico\Tweakwise\Model\Client\Request\ProductNavigationRequest;
+use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Framework\App\ActionInterface;
 use Zend\Http\Request as HttpRequest;
 use Magento\Framework\App\Request\Http as MagentoHttpRequest;
 
-class NullStrategy implements RouteMatchingInterface, UrlInterface, FilterApplierInterface
+class NullStrategy implements RouteMatchingInterface, UrlInterface, FilterApplierInterface, CategoryUrlInterface
 {
     /**
      * @param MagentoHttpRequest $request
@@ -83,6 +85,28 @@ class NullStrategy implements RouteMatchingInterface, UrlInterface, FilterApplie
      * @return string
      */
     public function getClearUrl(HttpRequest $request, array $activeFilterItems): string
+    {
+        return '';
+    }
+
+    /**
+     * @param HttpRequest $request
+     * @param Item $item
+     * @param CategoryInterface $category
+     * @return mixed
+     */
+    public function getCategorySelectUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
+    {
+        return '';
+    }
+
+    /**
+     * @param HttpRequest $request
+     * @param Item $item
+     * @param CategoryInterface $category
+     * @return mixed
+     */
+    public function getCategoryRemoveUrl(HttpRequest $request, Item $item, CategoryInterface $category): string
     {
         return '';
     }

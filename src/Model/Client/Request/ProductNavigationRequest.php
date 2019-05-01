@@ -25,6 +25,11 @@ class ProductNavigationRequest extends Request
     const SORT_DESC = 'DESC';
 
     /**
+     * Separator used in category tree requests
+     */
+    const CATEGORY_TREE_SEPARATOR = '-';
+
+    /**
      * {@inheritDoc}
      */
     protected $path = 'navigation';

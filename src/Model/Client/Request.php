@@ -8,6 +8,7 @@
 
 namespace Emico\Tweakwise\Model\Client;
 
+use Emico\Tweakwise\Model\Client\Request\ProductSearchRequest;
 use Emico\TweakwiseExport\Model\Helper;
 use Magento\Catalog\Model\Category;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -167,16 +168,13 @@ class Request
      */
     public function addCategoryFilter($category)
     {
+        $categoryFilter = $category;
         if ($category instanceof Category) {
-            $categoryId = $category->getId();
             $storeId = $category->getStoreId();
-        } else {
-            $categoryId = (int) $category;
-            $storeId = (int) $this->getStoreId();
+            $categoryFilter = $this->helper->getTweakwiseId($storeId, $category->getId());
         }
 
-        $tweakwiseId = $this->helper->getTweakwiseId($storeId, $categoryId);
-        $this->setParameter('tn_cid', $tweakwiseId);
+        $this->setParameter('tn_cid', $categoryFilter);
         return $this;
     }
 

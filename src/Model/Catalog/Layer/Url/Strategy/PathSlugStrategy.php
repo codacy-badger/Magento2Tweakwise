@@ -157,7 +157,18 @@ class PathSlugStrategy implements UrlInterface, RouteMatchingInterface, FilterAp
      */
     public function getClearUrl(HttpRequest $request, array $activeFilterItems): string
     {
-        return $this->buildFilterUrl($request, []);
+        // Category filtering is done by query params. We also need to unset the category filter in the query params
+        // This may be removed when we have a SEO path implementation for category filters
+        $query = null;
+        foreach ($this->getActiveFilters() as $filterItem) {
+            $filter = $filterItem->getFilter();
+            if ($filter->getFacet()->getFacetSettings()->getSource() === SettingsType::SOURCE_CATEGORY) {
+                $query = [$filter->getUrlKey() => null];
+                break;
+            }
+        }
+
+        return $this->buildFilterUrl($request, [], $query);
     }
 
     /**
@@ -217,13 +228,17 @@ class PathSlugStrategy implements UrlInterface, RouteMatchingInterface, FilterAp
     }
 
     /**
+     * @param array|null $query
      * @return string
      */
-    public function getCurrentUrl(): string
+    public function getCurrentUrl(array $query = null): string
     {
         $params['_current'] = true;
         $params['_use_rewrite'] = true;
         $params['_escape'] = false;
+        if ($query) {
+            $params['_query'] = $query;
+        }
         return $this->magentoUrl->getUrl('*/*/*', $params);
     }
 
@@ -238,11 +253,12 @@ class PathSlugStrategy implements UrlInterface, RouteMatchingInterface, FilterAp
     /**
      * @param MagentoHttpRequest $request
      * @param array $filters
+     * @param array $queryParams
      * @return string
      */
-    protected function buildFilterUrl(MagentoHttpRequest $request, array $filters = []): string
+    protected function buildFilterUrl(MagentoHttpRequest $request, array $filters = [], array $queryParams = []): string
     {
-        $currentUrl = $this->getCurrentUrl();
+        $currentUrl = $this->getCurrentUrl($queryParams);
 
         $currentFilterPath = $request->getParam(self::REQUEST_FILTER_PATH);
         $newFilterPath = $this->buildFilterSlugPath($filters);
@@ -277,8 +293,14 @@ class PathSlugStrategy implements UrlInterface, RouteMatchingInterface, FilterAp
         foreach ($filters as $filterItem) {
             $filter = $filterItem->getFilter();
             $urlKey = $filter->getUrlKey();
-            $selectionType = $filter->getFacet()->getFacetSettings()->getSelectionType();
-            if ($selectionType === SettingsType::SELECTION_TYPE_SLIDER) {
+            $facetSettings = $filter->getFacet()->getFacetSettings();
+
+            // Category filters are done with query params, so we need to skip those for the path
+            if ($facetSettings->getSource() === SettingsType::SOURCE_CATEGORY) {
+                continue;
+            }
+
+            if ($facetSettings->getSelectionType() === SettingsType::SELECTION_TYPE_SLIDER) {
                 $slug = $filterItem->getAttribute()->getTitle();
             } else {
                 $slug = $this->filterSlugManager->getSlugForFilterItem($filterItem);
@@ -365,12 +387,12 @@ class PathSlugStrategy implements UrlInterface, RouteMatchingInterface, FilterAp
      * @param CategoryInterface $category
      * @return string
      */
-    public function getCategoryTreeSelectUrl(
+    public function getCategorySelectUrl(
         HttpRequest $request,
         Item $item,
         CategoryInterface $category
     ): string {
-        return $this->queryParameterStrategy->getCategoryTreeSelectUrl($request, $item, $category);
+        return $this->queryParameterStrategy->getCategorySelectUrl($request, $item, $category);
     }
 
     /**
@@ -379,39 +401,11 @@ class PathSlugStrategy implements UrlInterface, RouteMatchingInterface, FilterAp
      * @param CategoryInterface $category
      * @return mixed
      */
-    public function getCategoryTreeRemoveUrl(
+    public function getCategoryRemoveUrl(
         HttpRequest $request,
         Item $item,
         CategoryInterface $category
     ): string {
-        return $this->queryParameterStrategy->getCategoryTreeRemoveUrl($request, $item, $category);
-    }
-
-    /**
-     * @param HttpRequest $request
-     * @param Item $item
-     * @param CategoryInterface $category
-     * @return mixed
-     */
-    public function getCategoryFilterSelectUrl(
-        HttpRequest $request,
-        Item $item,
-        CategoryInterface $category
-    ): string {
-        return $this->queryParameterStrategy->getCategoryFilterSelectUrl($request, $item, $category);
-    }
-
-    /**
-     * @param HttpRequest $request
-     * @param Item $item
-     * @param CategoryInterface $category
-     * @return mixed
-     */
-    public function getCategoryFilterRemoveUrl(
-        HttpRequest $request,
-        Item $item,
-        CategoryInterface $category
-    ): string {
-        return $this->getAttributeRemoveUrl($request, $item);
+        return $this->queryParameterStrategy->getCategoryRemoveUrl($request, $item, $category);
     }
 }
