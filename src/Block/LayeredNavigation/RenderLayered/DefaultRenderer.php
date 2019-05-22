@@ -14,6 +14,7 @@ use Emico\Tweakwise\Model\Client\Type\FacetType\SettingsType;
 use Emico\Tweakwise\Model\Config;
 use Emico\Tweakwise\Model\Seo\FilterHelper;
 use Magento\Framework\View\Element\Template;
+use Magento\Framework\Serialize\Serializer\Json;
 
 class DefaultRenderer extends Template
 {
@@ -44,14 +45,16 @@ class DefaultRenderer extends Template
      *
      * @param Template\Context $context
      * @param Config $config
+     * @param FilterHelper $filterHelper
      * @param Json $jsonSerializer
      * @param array $data
      */
-    public function __construct(Template\Context $context, Config $config, FilterHelper $filterHelper, array $data = [])
+    public function __construct(Template\Context $context, Config $config, FilterHelper $filterHelper, Json $jsonSerializer, array $data = [])
     {
+        parent::__construct($context, $data);
         $this->config = $config;
         $this->filterHelper = $filterHelper;
-        parent::__construct($context, $data);
+        $this->jsonSerializer = $jsonSerializer;
     }
 
     /**
@@ -88,12 +91,19 @@ class DefaultRenderer extends Template
     }
 
     /**
-     * @param Item $item
-     * @return string
+     * @return boolean
      */
-    protected function getItemUrl(Item $item)
+    public function hasAlternateSortOrder()
     {
-        return $this->escapeHtml($item->getUrl());
+        $filter = function (Item $item)
+        {
+            return $item->getAlternateSortOrder() !== null;
+        };
+
+        $items = $this->getItems();
+        $itemsWIthAlternateSortOrder = array_filter($items, $filter);
+
+        return \count($items) === \count($itemsWIthAlternateSortOrder);
     }
 
     /**
@@ -201,7 +211,8 @@ class DefaultRenderer extends Template
      */
     public function getJsNavigationConfig(): string
     {
-        return $this->config->getJsNavigationConfig();
+        $navigationOptions = ['hasAlternateSort' => $this->hasAlternateSortOrder()];
+        return $this->config->getJsNavigationConfig($navigationOptions);
     }
 
     /**

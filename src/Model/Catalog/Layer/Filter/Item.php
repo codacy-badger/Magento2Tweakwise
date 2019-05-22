@@ -89,6 +89,14 @@ class Item extends MagentoItem
     }
 
     /**
+     * @return int
+     */
+    public function getAlternateSortOrder()
+    {
+        return $this->attributeType->getAlternateSortOrder();
+    }
+
+    /**
      * Method is called for swatches and should return the original value instead of the label.
      * Used for the default swatch renderer
      *
@@ -106,7 +114,7 @@ class Item extends MagentoItem
     {
         $settings = $this->getFilter()->getFacet()->getFacetSettings();
         if ($settings->getSelectionType() === SettingsType::SELECTION_TYPE_SLIDER) {
-            return $this->url->getSliderUrl($this->getFilter());
+            return $this->url->getSliderUrl($this);
         }
 
         if ($this->isSelected()) {

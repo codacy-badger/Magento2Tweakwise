@@ -9,6 +9,7 @@
 namespace Emico\Tweakwise\Model;
 
 use Emico\Tweakwise\Exception\InvalidArgumentException;
+use Emico\Tweakwise\Model\Catalog\Layer\Url\Strategy\QueryParameterStrategy;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\Store;
@@ -186,6 +187,19 @@ class Config
 
     /**
      * @param Store|null $store
+     * @return string
+     */
+    public function getUrlStrategy(Store $store = null): string
+    {
+        $urlStrategy = $this->getStoreConfig('tweakwise/layered/url_strategy', $store);
+        if (empty($urlStrategy)) {
+            $urlStrategy = QueryParameterStrategy::class;
+        }
+        return $urlStrategy;
+    }
+
+    /**
+     * @param Store|null $store
      * @return bool
      */
     public function isAutocompleteEnabled(Store $store = null)
@@ -320,7 +334,7 @@ class Config
     {
         return (int) $this->getStoreConfig('tweakwise/seo/max_allowed_facets', $store);
     }
-
+    
     /**
      * @param Store|null $store
      * @param string $path
@@ -361,15 +375,19 @@ class Config
     }
 
     /**
+     * @param array $navigationOptions
      * @return string
      */
-    public function getJsNavigationConfig(): string
+    public function getJsNavigationConfig(array $navigationOptions = []): string
     {
         return $this->jsonSerializer->serialize([
-            'tweakwiseNavigationFilter' => [
-                'formFilters' => $this->getUseFormFilters(),
-                'seoEnabled' => $this->isSeoEnabled()
-            ],
+            'tweakwiseNavigationFilter' => array_merge(
+                [
+                    'formFilters' => $this->getUseFormFilters(),
+                    'seoEnabled' => $this->isSeoEnabled()
+                ],
+                $navigationOptions
+            )
         ]);
     }
 
